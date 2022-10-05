@@ -16,7 +16,7 @@ I do not warrant that this code is bug-free and that it may not leave AWS resour
 ## Terminology
 * **Protected Server** - The server on the inside of the firewall. Perhaps your home Linux box. It will have outbound SSH access, but not inbound
 * **Jump Server** - an ephemeral EC2 instance used as an SSH jump host
-* **Caller** - a machine running the script to create the EC2 instance which will also be allowed to connect to the Jump Server, and onwards to the Protected Server. This could be a laptop outside the network of the Protected Server.
+* **Caller** - a machine running the script to create the EC2 instance which will also be allowed to connect to the Jump Server, and onwards to the Protected Server. This could be a laptop outside the network of the Protected Server. You could have multiple Callers, if you had multiple laptops, for example.
 
 ## Architecture
 
@@ -55,7 +55,7 @@ The latest Amazon Linux 2 AMI is used every tine, to get as fresh an image as po
 
 ### Deploy base infrastructure with Terraform
 1. Rename `terraform/backend_config/hulahoop-EXAMPLE.tfvars` to `terraform/backend_config/hulahoop.tfvars`, setting the correct values for the prerequisite S3 bucket name and your chosen AWS region
-1. Copy `terraform/parameters/hulahoop_public_keys-EXAMPLE.txt` to `terraform/parameters/hulahoop_public_keys.txt` and add the public SSH keys used on both your Caller and your Protected Server
+1. Copy `terraform/parameters/hulahoop_public_keys-EXAMPLE.txt` to `terraform/parameters/hulahoop_public_keys.txt` and add the SSH public key for the hulahoop user on your Protected Server and for any users on Caller machines you may wish to use
 1. `cd terraform`
 1. `terraform init --backend-config=backend_config/1ulahoop.tfvars`
 1. `terraform plan`

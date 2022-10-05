@@ -1,0 +1,79 @@
+#!/bin/bash
+
+USER=ec2-user
+if [ ! -d /home/${USER}/.ssh ]; then
+  mkdir /home/${USER}/.ssh
+  chown ${USER}:${USER} /home/${USER}/.ssh
+fi
+aws ssm get-parameters --names /hulahoop/public_keys --with-decryption --region eu-west-1 --query 'Parameters[0].[Value]' --output text >> /home/${USER}/.ssh/authorized_keys
+chown ${USER}:${USER} /home/${USER}.ssh/authorized_keys
+
+# Install AWS CLI v2 - installs to /usr/local/bin/aws
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+unzip /tmp/awscliv2.zip -d /tmp
+sudo /tmp/aws/install
+
+cat <<\EOF >>/usr/local/bin/hulahoop_shutdown.sh
+# Get a token for the metadata API
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+# Find our region
+REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/availability-zone | sed 's/[a-z]$//')
+
+# Find our instance ID
+INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+
+# Get the IDs of security groups attached to this instance
+SG_IDS=$(/usr/local/bin/aws --region ${REGION} ec2 describe-instances --instance-id ${INSTANCE_ID} --query "Reservations[].Instances[].SecurityGroups[].GroupId[]" --output text)
+
+# Remove all the ingress rules from those security groups
+for sg in ${SG_IDS}; do
+  # Get SG ingress rules
+  RULES=$(/usr/local/bin/aws --region ${REGION} ec2 describe-security-group-rules --filter Name="group-id",Values="$sg" --filter "Name=tag:Project",Values="Hulahoop" --query SecurityGroupRules[*].SecurityGroupRuleId --output text)
+  # Delete those SG ingress rules
+  echo -n "Deleting inbound SG rules to Hulahoop jump server... "
+  /usr/local/bin/aws --region ${REGION} ec2 revoke-security-group-ingress --group-id ${sg} --security-group-rule-ids ${RULES} --output text > /dev/null
+  if [ $? -eq 0 ]; then echo "Done"; else echo "Error"; fi
+done
+
+echo "Initiating OS shutdown"
+sudo /usr/sbin/shutdown -h now
+EOF
+
+chmod 755 /usr/local/bin/hulahoop_shutdown.sh
+echo "/usr/local/bin/hulahoop_shutdown.sh" >> /home/${USER}/.bash_logout
+
+cat <<\EOF >>/usr/local/bin/hulahoop_tunnel_checker
+#!/bin/bash
+
+# If we see two SSH sessions, we will assume the tunnel is open
+SESSION_COUNT=$(ps -ef |grep sshd |grep "^ec2-user" |wc -l)
+
+if [ ${SESSION_COUNT} -gt 1 ]; then
+  # We have at least two sessions so consider the tunnel active
+  touch /tmp/hulahoop_active_tunnel
+  exit
+else
+  # We currently have no active tunnel
+  if [ -f /tmp/hulahoop_active_tunnel ]; then
+    # No current active connection, but we have had one previously - call shutdown
+      /usr/local/bin/hulahoop_shutdown.sh
+  else
+    # No current active tunnel, and we haven't had one yet
+    UPTIME=$(cat /proc/uptime | awk '{print $1}' | cut -d'.' -f1)
+    if [ ${UPTIME} -gt 1800 ]; then
+      # We have been up 30 minutes with no active tunnel - call shutdown
+      /usr/local/bin/hulahoop_shutdown.sh
+    fi
+  fi
+fi
+EOF
+chmod 755 /usr/local/bin/hulahoop_tunnel_checker
+
+# Add the tunnel checker to the crontab
+echo "* * * * * root /usr/local/bin/hulahoop_tunnel_checker" >> /etc/crontab
+
+# Tweak the SSHD client timeouts to kill dead sessions more readily
+echo "ClientAliveInterval 5m" >> /etc/ssh/sshd_config
+echo "ClientAliveCountMax 2" >> /etc/ssh/sshd_config
+systemctl restart sshd

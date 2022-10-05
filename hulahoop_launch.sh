@@ -14,9 +14,13 @@ PROTECTED_SERVER_HOSTNAME="yourname.duckdns.org"
 # Get the ID of the latest Amazon Linux 2 AMI in our region
 AMAZON_LINUX_LATEST=$(aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2 --region ${REGION} --query 'Parameters[0].[Value]' --output text)
 
+# Determine the path to the user_data.txt file
+SCRIPTDIR=$(dirname $0)
+USER_DATA_PATH="${SCRIPTDIR}/user_data.txt"
+
 # Launch Hulahoop jump server instance
 echo -n "Launching Hulahoop jump server... "
-INSTANCE_ID=$(aws --region ${REGION} ec2 run-instances --image-id ${AMAZON_LINUX_LATEST} --count 1 --instance-type ${INSTANCE_TYPE} --security-group-ids ${SECURITY_GROUP_ID} --subnet-id ${SUBNET_ID} --user-data fileb://user_data.txt --instance-initiated-shutdown-behavior terminate --iam-instance-profile Name=${IAM_INSTANCE_PROFILE} --tag-specifications ResourceType=instance,Tags='[{Key=Project,Value=Hulahoop},{Key=Name,Value=Hulahoop}]' --query "Instances[0].InstanceId" --output text)
+INSTANCE_ID=$(aws --region ${REGION} ec2 run-instances --image-id ${AMAZON_LINUX_LATEST} --count 1 --instance-type ${INSTANCE_TYPE} --security-group-ids ${SECURITY_GROUP_ID} --subnet-id ${SUBNET_ID} --user-data fileb://${USER_DATA_PATH} --instance-initiated-shutdown-behavior terminate --iam-instance-profile Name=${IAM_INSTANCE_PROFILE} --tag-specifications ResourceType=instance,Tags='[{Key=Project,Value=Hulahoop},{Key=Name,Value=Hulahoop}]' --query "Instances[0].InstanceId" --output text)
 echo "Done"
 
 echo -n "Waiting for server to become running to find public IP address... "

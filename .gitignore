@@ -32,3 +32,6 @@ override.tf.json
 terraform/parameters/hulahoop_public_keys.txt
 # Real backend vars - example file exists
 terraform/backend_config/hulahoop.tfvars
+
+# Terraform dependency lock file - not for me to tell people how to use their Terraform
+**/.terraform.lock.hcl

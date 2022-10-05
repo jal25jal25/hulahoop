@@ -1,8 +1,8 @@
-# Hulahoop
+# Hulahoop
 
 Some Terraform and some scripts to let you SSH home without any open firewall ports, using an ephemeral EC2 instance as a jump host. Built with a desire to minimise cost.
 
-## Background
+## Background
 
 I used to allow SSH access to a home server behind my ISP-provided router/firewall. While I kept my OS up to date and took the usual precautions against compromise and SSH door handle rattlers, the router's performance just degraded when the inbound firewall ports were open and was receiving a constant barrage of requests.
 
@@ -10,7 +10,7 @@ I wanted a solution so that I could SSH home, but I didn't need any inbound fire
 
 In this document I do assume prior knowledge of AWS and Terraform, and using SSH in general.
 
-## Warranty
+## Warranty
 I do not warrant that this code is bug-free and that it may not leave AWS resources running and incurring you cost. It is also up to you to decide if the code is secure and fits your needs. Use entirely at your own risk.
 
 ## Terminology
@@ -18,9 +18,9 @@ I do not warrant that this code is bug-free and that it may not leave AWS resour
 * **Jump Server** - an ephemeral EC2 instance used as an SSH jump host
 * **Caller** - a machine running the script to create the EC2 instance which will also be allowed to connect to the Jump Server, and onwards to the Protected Server. This could be a laptop outside the network of the Protected Server.
 
-## Architecture
+## Architecture
 
-### Architecture Diagram
+### Architecture Diagram
 tbc
 
 ### Architecture Overview
@@ -37,23 +37,23 @@ The Jump Server will shut down when detects that either:
 
 The latest Amazon Linux 2 AMI is used every tine, to get as fresh an image as possible
 
-## Prerequisites
+## Prerequisites
 
 1. [Terraform](https://www.terraform.io/) installed
 1. Authentication to an AWS account with sufficient privileges to run the Terraform
 1. An S3 bucket to store Terraform state
 1. Hostname in public DNS for protected server. A service like [Duck DNS](www.duckdns.org) will come in handy here. If you're looking at other ways of reaching your home server from outside, you are probably using a similar service anyway. There is a Todo item (below) to modify the script to take an IP address if you have a static one (PRs welcome!)
 
-## Configuration
+## Configuration
 
-### On your "protected server" (part 1)
+### On your "protected server" (part 1)
 1. Create a user for running hulahoop, e.g. `hulahoop`
 2. Ensure email for the new user is sent somewhere you will receive it, e.g. by using a `.forward` file or configuring your local MTA
 1. Generate an SSH keypair for the new user, with `ssh-keygen`
 1. Add the `hulahoop_connect.sh` script. I suggest in the `/home/hulahoop/bin` directory
 1. Edit the configuration section at the top of the script to reflect your chosen AWS region 
 
-### Deploy base infrastructure with Terraform
+### Deploy base infrastructure with Terraform
 1. Rename `terraform/backend_config/hulahoop-EXAMPLE.tfvars` to `terraform/backend_config/hulahoop.tfvars`, setting the correct values for the prerequisite S3 bucket name and your chosen AWS region
 1. Copy `terraform/parameters/hulahoop_public_keys-EXAMPLE.txt` to `terraform/parameters/hulahoop_public_keys.txt` and add the public SSH keys used on both your Caller and your Protected Server
 1. `cd terraform`
@@ -61,7 +61,7 @@ The latest Amazon Linux 2 AMI is used every tine, to get as fresh an image as po
 1. `terraform plan`
 1. `terraform apply`
 
-### In AWS (Console or CLI)
+### In AWS (Console or CLI)
 Manually create access keys for the two IAM users created by Terraform:
 
 * `hulahoop_protected_server`
@@ -69,13 +69,13 @@ Manually create access keys for the two IAM users created by Terraform:
 
 I prefer to do this manually, as to output credentials requires them to be stored in the Terraform state file.
 
-### On your "protected server" (part 2)
+### On your "protected server" (part 2)
 1. Place the access key and secret access key for the `hulahoop_protected_server` IAM user on your protected server so that when the `hulahoop_connect.sh` script is run, it gains the correct AWS credentials, e.g. by creating an [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) file at `/home/hulahoop/.aws/credentials`:
 1. Add a cron job to run `hulahoop_connect.sh` periodically. I would recommend something like:
 ```*/5 * * * * exec /home/hulahoop/bin/hulahoop_connect.sh```
 (Note I use `exec` to prevent spawning another process, which becomes useful when tracking how many processes are running)
 
-### On your Caller
+### On your Caller
 1. Install the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 1. Add the `hulahoop_caller.sh` and `user_data.txt` scripts to the same directory on your caller machine. 
 1. Edit the configuration section at the top of `hulahoop_caller.sh` to reflect the resource IDs created by Terraform, your chosen AWS region and the DNS name of your Protected Server.
@@ -93,13 +93,13 @@ On the Caller, run `hulahoop_launch.sh`. This script will:
 * Wait for the Jump Server to have received an inbound connection from the Protected Host
 * Output useful SSH / SCP strings demonstrating how to connect to the Protected Server
 
-## Destroying a tunnel
+## Destroying a tunnel
 Simply disconnect your last SSH session from the Caller to the Jump Host and the Jump Host will remove the security group rules and terminate within a few minutes
 
 If you do not connect via SSH to the Jump Host within 30 minutes, it will remove the Security Group rules and terminate.
 
-## Security
-### AWS IAM
+## Security
+### AWS IAM
 The IAM policies can be seen in the `terraform/policies` directory:
 * `hulahoop_protected_server.json` for the `hulahoop_connect.sh` script running on the Protected Server
 * `hulahoop_caller.tpl` for the `hulahoop_launch.sh` script running on the Caller

@@ -29,7 +29,7 @@ SG_IDS=$(/usr/local/bin/aws --region ${REGION} ec2 describe-instances --instance
 # Remove all the ingress rules from those security groups
 for sg in ${SG_IDS}; do
   # Get SG ingress rules
-  RULES=$(/usr/local/bin/aws --region ${REGION} ec2 describe-security-group-rules --filter Name="group-id",Values="$sg" --filter "Name=tag:Project",Values="Hulahoop" --query SecurityGroupRules[*].SecurityGroupRuleId --output text)
+  RULES=$(/usr/local/bin/aws --region ${REGION} ec2 describe-security-group-rules --filters Name="group-id",Values="$sg" --filters "Name=tag:Project",Values="Hulahoop" --query SecurityGroupRules[*].SecurityGroupRuleId --output text)
   # Delete those SG ingress rules
   echo -n "Deleting inbound SG rules to Hulahoop jump server... "
   /usr/local/bin/aws --region ${REGION} ec2 revoke-security-group-ingress --group-id ${sg} --security-group-rule-ids ${RULES} --output text > /dev/null

@@ -47,11 +47,11 @@ fi
 while [ -z ${PUBLIC_IP} ]; do
   PUBLIC_IP=$(/usr/local/bin/aws --region ${REGION} ec2 describe-instances --instance-ids ${INSTANCE_ID_TO_USE} --query "Reservations[].Instances[].PublicIpAddress" --output text)
   sleep 2
-  echo "Connecting to Hulahoop jump server at ${PUBLIC_IP}. 'c' will appear every 30 seconds while connected"
-  ssh -o StrictHostKeyChecking=no -R 19876:localhost:22 ${USER}@${PUBLIC_IP} 'touch /tmp/hulahoop_protected_server_ssh_active && while true; do sleep 30; echo -n "c"; done'
+  echo "Connecting to Hulahoop jump server at ${PUBLIC_IP}. '.' will appear every 30 seconds while connected"
+  ssh -o StrictHostKeyChecking=no -R 19876:localhost:22 ${USER}@${PUBLIC_IP} 'touch /tmp/hulahoop_protected_server_ssh_active && while true; do sleep 30; echo -n "."; done'
 done  
 
-echo "Connection ended. Sleeping for 300 seconds"
+echo -e "\nConnection ended. Sleeping for 300 seconds"
 sleep 300
 
 # Find any Hulahoop instances by tag and by running state

@@ -28,6 +28,9 @@ override.tf.json
 # Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
 # example: *tfplan*
 
+# vi swap files
+**/*.swp
+
 # Real keys file (even though they're just public keys) - example file exists
 terraform/parameters/hulahoop_public_keys.txt
 # Real backend vars - example file exists

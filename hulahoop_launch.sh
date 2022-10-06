@@ -53,8 +53,10 @@ fi
 
 echo "Public IP address of jump server is ${PUBLIC_IP}"
 echo ""
-echo "    SSH to protected server via jump server with: ssh -o ProxyCommand='ssh -W %h:%p ec2-user@${PUBLIC_IP}' <protected_server_username>@localhost -p 19876"
-echo "    SCP with: scp -o ProxyCommand='ssh -W %h:%p ec2-user@${PUBLIC_IP}' -P 19876 <protected_server_username>@localhost:<file> <dest>"
+echo "    SSH to protected server via jump server with:"
+echo "    ssh -o ProxyCommand='ssh -W %h:%p ec2-user@${PUBLIC_IP}' <protected_server_username>@localhost -p 19876"
+echo "    SCP with:"
+echo "    scp -o ProxyCommand='ssh -W %h:%p ec2-user@${PUBLIC_IP}' -P 19876 <protected_server_username>@localhost:<file> <dest>"
 echo ""
 
 echo -n "Waiting for active tunnel from protected server to jump server"

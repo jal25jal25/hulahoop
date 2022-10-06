@@ -39,6 +39,7 @@ The latest Amazon Linux 2 AMI is used every tine, to get as fresh an image as po
 
 ## Prerequisites
 
+1. An AWS account
 1. [Terraform](https://www.terraform.io/) installed
 1. Authentication to an AWS account with sufficient privileges to run the Terraform
 1. An S3 bucket to store Terraform state
@@ -113,4 +114,3 @@ By only exposing SSH ports on the ephemeral jump server, and then only to the sp
 ## Todo
 1. Identify the least-privilege IAM policy for deploying the Terraform
 1. Modify the `hulahoop_launch.sh` script to accept an IP address as an alternative for hostname and skip the DNS lookup
-1. Find cause of bug which means `hulahoop_connect.sh` running on Jump Server cannot see that the instance has terminated once disconnected and reports that there is still an instance running

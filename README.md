@@ -78,8 +78,8 @@ I prefer to do this manually, as to output credentials requires them to be store
 
 ### On your Caller
 1. Install the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-1. Add the `hulahoop_caller.sh` and `user_data.txt` scripts to the same directory on your caller machine. 
-1. Edit the configuration section at the top of `hulahoop_caller.sh` to reflect the resource IDs created by Terraform, your chosen AWS region and the DNS name of your Protected Server.
+1. Add the `hulahoop_launch.sh` and `user_data.txt` scripts to the same directory on your caller machine. 
+1. Edit the configuration section at the top of `hulahoop_launch.sh` to reflect the resource IDs created by Terraform, your chosen AWS region and the DNS name of your Protected Server.
 1. Place the access key and secret access key for the `hulahoop_caller` IAM user on your caller so that when the `hulahoop_launch.sh` script is run, it gains the correct AWS credentials. You could use an AWS credentials file as above, or environment variables, or some other means.
 
 ## Creating a tunnel

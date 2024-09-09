@@ -18,6 +18,13 @@ AMAZON_LINUX_LATEST=$(aws ssm get-parameters --names /aws/service/ami-amazon-lin
 SCRIPTDIR=$(dirname $0)
 USER_DATA_PATH="${SCRIPTDIR}/user_data.txt"
 
+# find the protected server's IP address
+PROTECTED_SERVER_IP=$(dig +short ${PROTECTED_SERVER_HOSTNAME})
+if [ -z ${PROTECTED_SERVER_IP} ]; then
+    echo "Error: Cannot get protected server IP address from hostname. Exiting"
+    exit 1
+fi
+
 # Launch Hulahoop jump server instance
 echo -n "Launching Hulahoop jump server... "
 INSTANCE_ID=$(aws --region ${REGION} ec2 run-instances --image-id ${AMAZON_LINUX_LATEST} --count 1 --instance-type ${INSTANCE_TYPE} --security-group-ids ${SECURITY_GROUP_ID} --subnet-id ${SUBNET_ID} --user-data fileb://${USER_DATA_PATH} --instance-initiated-shutdown-behavior terminate --iam-instance-profile Name=${IAM_INSTANCE_PROFILE} --tag-specifications ResourceType=instance,Tags='[{Key=Project,Value=Hulahoop},{Key=Name,Value=Hulahoop}]' --query "Instances[0].InstanceId" --output text)
@@ -38,9 +45,6 @@ MY_IP=$(curl -s https://checkip.amazonaws.com)
 echo -n "Adding security group ingress rule for this IP address: ${MY_IP} ... "
 aws --region ${REGION} ec2 authorize-security-group-ingress --group-id ${SECURITY_GROUP_ID} --protocol tcp --port 22 --cidr ${MY_IP}/32 --tag-specifications ResourceType=security-group-rule,Tags='[{Key=Project,Value=Hulahoop}]' >/dev/null
 if [ $? -eq 0 ]; then echo "Done"; else echo "Error"; fi
-
-# find the protected server's IP address
-PROTECTED_SERVER_IP=$(dig +short ${PROTECTED_SERVER_HOSTNAME})
 
 if [ ${MY_IP} == ${PROTECTED_SERVER_IP} ]; then
 	echo "Skipping second security group rule as client and protected server IP addresses are identical (are you at home?)"

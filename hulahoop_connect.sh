@@ -16,7 +16,7 @@ if [ ${#PROCESSES_ARRAY[@]} -gt 1 ]; then
 fi
 
 # Find any Hulahoop instances by tag and by running state
-INSTANCE_IDS=$(/usr/local/bin/aws --region ${REGION} ec2 describe-instances --query "Reservations[].Instances[].InstanceId[]" --filters "Name=tag:Project",Values="Hulahoop" --filters Name="instance-state-name",Values="running" --output text)
+INSTANCE_IDS=$(/usr/local/bin/aws --region ${REGION} ec2 describe-instances --query "Reservations[].Instances[].InstanceId[]" --filters Name=tag-key,Values="Project" Name=tag-value,Values="Hulahoop" Name="instance-state-name",Values="running" --output text)
 
 LATEST_LAUNCH_TIME_EPOCH=0
 INSTANCE_IDS_ARRAY=($INSTANCE_IDS)
@@ -47,15 +47,15 @@ fi
 while [ -z ${PUBLIC_IP} ]; do
   PUBLIC_IP=$(/usr/local/bin/aws --region ${REGION} ec2 describe-instances --instance-ids ${INSTANCE_ID_TO_USE} --query "Reservations[].Instances[].PublicIpAddress" --output text)
   sleep 2
-  echo "Connecting to Hulahoop jump server at ${PUBLIC_IP}. '.' will appear every 30 seconds while connected"
-  ssh -o StrictHostKeyChecking=no -R 19876:localhost:22 ${USER}@${PUBLIC_IP} 'touch /tmp/hulahoop_protected_server_ssh_active && while true; do sleep 30; echo -n "."; done'
+  echo "Connecting to Hulahoop jump server at ${PUBLIC_IP}. 'c' will appear every 30 seconds while connected"
+  ssh -o StrictHostKeyChecking=no -R 19876:localhost:22 ${USER}@${PUBLIC_IP} 'touch /tmp/hulahoop_protected_server_ssh_active && while true; do sleep 30; echo -n "c"; done'
 done  
 
-echo -e "\nConnection ended. Sleeping for 300 seconds"
+echo "Connection ended. Sleeping for 300 seconds"
 sleep 300
 
 # Find any Hulahoop instances by tag and by running state
-REMAINING_INSTANCE_IDS=$(/usr/local/bin/aws --region ${REGION} ec2 describe-instances --query "Reservations[].Instances[].InstanceId[]" --filters "Name=tag:Project",Values="Hulahoop" --filters Name="instance-state-name",Values="running" --output text)
+REMAINING_INSTANCE_IDS=$(/usr/local/bin/aws --region ${REGION} ec2 describe-instances --query "Reservations[].Instances[].InstanceId[]" --filters Name=tag-key,Values="Project" Name=tag-value,Values="Hulahoop" Name="instance-state-name",Values="running" --output text)
 REMAINING_INSTANCE_IDS_ARRAY=($REMAINING_INSTANCE_IDS)
 
 if [ ${#REMAINING_INSTANCE_IDS_ARRAY[@]} -eq 0 ]; then

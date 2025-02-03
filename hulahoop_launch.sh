@@ -6,13 +6,14 @@ REGION="eu-west-1"
 SECURITY_GROUP_ID="sg-12345678901234567"
 VPC_ID="vpc-12345678901234567"
 SUBNET_ID="subnet-12345678901234567"
-INSTANCE_TYPE=t3.nano
+INSTANCE_TYPE=t4g.nano
+OS_TYPE=al2023-ami-kernel-default-arm64
 IAM_INSTANCE_PROFILE="hulahoop_jump_server"
 PROTECTED_SERVER_HOSTNAME="yourname.duckdns.org"
 ###  End Configuration  ###
 
 # Get the ID of the latest Amazon Linux 2 AMI in our region
-AMAZON_LINUX_LATEST=$(aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2 --region ${REGION} --query 'Parameters[0].[Value]' --output text)
+AMAZON_LINUX_LATEST=$(aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/${OS_TYPE} --region ${REGION} --query 'Parameters[0].[Value]' --output text)
 
 # Determine the path to the user_data.txt file
 SCRIPTDIR=$(dirname $0)

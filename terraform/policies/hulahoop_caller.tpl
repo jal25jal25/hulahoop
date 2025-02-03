@@ -4,7 +4,7 @@
         {
             "Effect": "Allow",
             "Action": "ssm:GetParameters",
-            "Resource": "arn:aws:ssm:${region}::parameter/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+            "Resource": "arn:aws:ssm:${region}::parameter/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
         },
         {
             "Effect": "Allow",

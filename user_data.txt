@@ -47,7 +47,7 @@ cat <<\EOF >>/usr/local/bin/hulahoop_tunnel_checker
 #!/bin/bash
 
 # If we see two SSH sessions, we will assume the tunnel is open
-SESSION_COUNT=$(ps -ef |grep sshd |grep "^ec2-user" |wc -l)
+SESSION_COUNT=$(ps -ef |grep [s]shd |grep "^ec2-user" |wc -l)
 
 if [ ${SESSION_COUNT} -gt 1 ]; then
   # We have at least two sessions so consider the tunnel active
@@ -70,8 +70,34 @@ fi
 EOF
 chmod 755 /usr/local/bin/hulahoop_tunnel_checker
 
-# Add the tunnel checker to the crontab
-echo "* * * * * root /usr/local/bin/hulahoop_tunnel_checker" >> /etc/crontab
+# Create a systemd service for the tunnel checker
+cat <<\EOF >>/etc/systemd/system/hulahoop_tunnel_checker.service
+[Unit]
+Description="Checks on the status of active Hulahoop tunnels"
+Requires=hulahoop_tunnel_checker.timer
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/hulahoop_tunnel_checker
+User=root
+EOF
+
+# Create a systemd timer for the tunnel checker
+cat <<\EOF >>/etc/systemd/system/hulahoop_tunnel_checker.timer
+[Unit]
+Description="Run helloworld.service 5min after boot and every 24 hours relative to activation time"
+
+[Timer]
+OnStartupSec=1min
+OnUnitActiveSec=1min
+Unit=hulahoop_tunnel_checker.service
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Start the systemd timer for the tunnel checker (no need to enable, only one boot)
+systemctl start hulahoop_tunnel_checker.timer
 
 # Tweak the SSHD client timeouts to kill dead sessions more readily
 echo "ClientAliveInterval 5m" >> /etc/ssh/sshd_config
